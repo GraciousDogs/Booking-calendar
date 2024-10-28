@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dog Walk Booking Calendar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f8fa;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        #calendar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .month {
+            background-color: #e0e7ff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            width: 100%;
+        }
+        .days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .day-button {
+            width: 40px;
+            height: 40px;
+            background-color: #f2f2f2;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .day-button.selected {
+            background-color: #a3d8a1;
+        }
+        .day-button:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h2>Book Your Dog's Walk</h2>
+    <form id="bookingForm">
+        <label for="name">Your Name:</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="dogName">Dog's Name:</label>
+        <input type="text" id="dogName" name="dogName" required>
+
+        <label for="service">Service:</label>
+        <select id="service" name="service" required>
+            <option value="1-hour walk">1-hour walk</option>
+            <option value="30-min visit">30-min visit</option>
+        </select>
+
+        <label>Select Dates:</label>
+        <div id="calendar"></div>
+
+        <input type="hidden" id="selectedDates" name="selectedDates">
+        <button type="submit">Book</button>
+    </form>
+
+    <script>
+        const calendarDiv = document.getElementById("calendar");
+        const selectedDatesInput = document.getElementById("selectedDates");
+        const selectedDates = new Set();
+
+        function createCalendar(monthOffset) {
+            const today = new Date();
+            const currentMonth = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+            const monthName = currentMonth.toLocaleString('default', { month: 'long' });
+            
+            const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+
+            const monthDiv = document.createElement("div");
+            monthDiv.className = "month";
+            monthDiv.innerHTML = `<h3>${monthName} ${currentMonth.getFullYear()}</h3>`;
+            const daysDiv = document.createElement("div");
+            daysDiv.className = "days";
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+                const dateString = date.toISOString().split('T')[0];
+
+                const dayButton = document.createElement("button");
+                dayButton.type = "button";
+                dayButton.className = "day-button";
+                dayButton.textContent = day;
+                
+                dayButton.onclick = () => {
+                    if (selectedDates.has(dateString)) {
+                        selectedDates.delete(dateString);
+                        dayButton.classList.remove("selected");
+                    } else {
+                        selectedDates.add(dateString);
+                        dayButton.classList.add("selected");
+                    }
+                    selectedDatesInput.value = Array.from(selectedDates).join(",");
+                };
+                daysDiv.appendChild(dayButton);
+            }
+            monthDiv.appendChild(daysDiv);
+            calendarDiv.appendChild(monthDiv);
+        }
+
+        createCalendar(0);  // Current month
+        createCalendar(1);  // Next month
+
+        document.getElementById("bookingForm").onsubmit = async function (event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            await fetch("YOUR_GOOGLE_SCRIPT_URL", {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+
+            alert("Booking submitted! Thank you.");
+            event.target.reset();
+            selectedDates.clear();
+            Array.from(calendarDiv.querySelectorAll(".day-button")).forEach(btn => btn.classList.remove("selected"));
+        };
+    </script>
+</body>
+</html>
